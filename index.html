@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Movie Creator Pro</title>
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/wavesurfer.js"></script>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>🎬 Movie Creator Pro</h1>
+    <p>画像・GIF・音声から動画を作成</p>
+    <p>動画系は使えません</p>
+</header>
+
+<main>
+
+    <!-- 画像 -->
+    <section class="card">
+
+        <h2>画像 / GIF</h2>
+
+        <input
+            type="file"
+            id="images"
+            accept="image/*,.gif"
+            multiple>
+
+        <div id="imagePreview"></div>
+
+    </section>
+
+    <section class="card">
+
+        <h2>録音</h2>
+
+        <button id="recordBtn">
+            録音開始
+        </button>
+
+        <button
+            id="stopRecordBtn"
+            disabled>
+            録音停止
+        </button>
+
+        <audio
+            id="recordPreview"
+            controls>
+        </audio>
+
+    </section>
+
+    <!-- 音声 -->
+    <section class="card">
+
+        <h2>音声</h2>
+
+        <input
+            type="file"
+            id="audio"
+            accept="audio/*">
+
+        <audio
+            id="audioPreview"
+            controls>
+        </audio>
+
+        <div id="waveform"></div>
+
+    </section>
+
+    <!-- 歌詞 -->
+    <section class="card">
+
+        <h2>歌詞</h2>
+
+        <textarea
+            id="lyrics"
+            rows="10"
+            placeholder="1行ずつ入力"></textarea>
+
+    </section>
+
+    <!-- 動画設定 -->
+    <section class="card">
+
+        <h2>動画設定</h2>
+
+        <div class="grid">
+
+            <div>
+
+                <label>
+                    解像度
+                </label>
+
+                <select id="resolution">
+
+                    <option value="1280x720">
+                        HD
+                    </option>
+
+                    <option value="1920x1080" selected>
+                        Full HD
+                    </option>
+
+                    <option value="3840x2160">
+                        4K
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div>
+
+                <label>
+                    出力形式
+                </label>
+
+                <select id="format">
+
+                    <option value="mp4">
+                        MP4
+                    </option>
+
+                    <option value="webm">
+                        WebM
+                    </option>
+
+                    <option value="mov">
+                        MOV
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div>
+
+                <label>
+                    FPS
+                </label>
+
+                <input
+                    type="number"
+                    id="fps"
+                    min="1"
+                    max="120"
+                    value="30">
+
+            </div>
+
+            <div>
+
+                <label>
+                    画像表示秒数
+                </label>
+
+                <input
+                    type="number"
+                    id="duration"
+                    min="1"
+                    max="60"
+                    value="3">
+
+            </div>
+
+            <div>
+
+                <label>
+                    フェード秒数
+                </label>
+
+                <input
+                    type="number"
+                    id="fade"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    value="1">
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- 音量 -->
+    <section class="card">
+
+        <h2>音量</h2>
+
+        <input
+            type="range"
+            id="volume"
+            min="0"
+            max="200"
+            value="100">
+
+        <span id="volumeText">
+            100%
+        </span>
+
+    </section>
+
+    <!-- プレビュー -->
+    <section class="card">
+
+        <h2>動画プレビュー</h2>
+
+        <div class="previewArea">
+
+            <canvas id="previewCanvas"></canvas>
+
+            <div id="lyricsPreview"></div>
+
+        </div>
+
+    </section>
+
+    <!-- 動画生成 -->
+    <section class="card">
+
+        <h2>動画生成</h2>
+
+        <button id="generateBtn">
+            動画生成開始
+        </button>
+
+        <div id="status">
+            待機中
+        </div>
+
+        <div id="progressContainer">
+            <div id="progressBar"></div>
+        </div>
+
+    </section>
+
+    <!-- 出力 -->
+    <section class="card">
+
+        <h2>出力動画</h2>
+
+        <video
+            id="outputVideo"
+            controls>
+        </video>
+
+        <br>
+
+        <a
+            id="downloadBtn"
+            download
+            style="display:none;">
+            ダウンロード
+        </a>
+
+    </section>
+
+</main>
+
+<script src="app.js"></script>
+
+</body>
+</html>
