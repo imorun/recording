@@ -4,11 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Movie Creator Pro</title>
-
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/wavesurfer.js"></script>
-
 <link rel="stylesheet" href="style.css">
 </head>
 
@@ -16,257 +13,212 @@
 
 <header>
     <h1>🎬 Movie Creator Pro</h1>
-    <p>画像・GIF・音声から動画を作成</p>
-    <p>動画系は使えません</p>
+    <p>画像、GIF、音声、テロップをブラウザ上で組み合わせて、手軽にムービーを作成できます</p>
+    <p style="font-size: 0.9rem; opacity: 0.7;">ブラウザのネイティブキャプチャ（Canvas & MediaRecorder）を使用し、超高速かつセキュアに動作します。</p>
 </header>
 
-<main>
+<main class="app-layout">
+    <!-- Left Column: Previews & Output -->
+    <div class="preview-column">
+        <!-- リアルタイムプレビュー -->
+        <section class="card preview-card">
+            <div class="card-header">
+                <h2>🎬 ライブプレビュー</h2>
+                <span class="badge live">LIVE</span>
+            </div>
+            <div class="previewArea">
+                <canvas id="previewCanvas"></canvas>
+                <div id="lyricsPreview"></div>
+            </div>
+        </section>
 
-    <!-- 画像 -->
-    <section class="card">
+        <!-- 動画生成 & 進捗 -->
+        <section class="card generate-card">
+            <h2>⚙️ 動画生成コントロール</h2>
+            <button id="generateBtn" class="btn-primary">
+                🚀 動画生成開始
+            </button>
+            <div id="status">待機中</div>
+            <div id="progressContainer">
+                <div id="progressBar"></div>
+            </div>
+        </section>
 
-        <h2>画像 / GIF</h2>
+        <!-- 出力動画 -->
+        <section class="card output-card">
+            <h2>📦 出力された動画</h2>
+            <video id="outputVideo" controls></video>
+            <a id="downloadBtn" download style="display:none;" class="btn-success">
+                💾 ダウンロード
+            </a>
+        </section>
+    </div>
 
-        <input
-            type="file"
-            id="images"
-            accept="image/*,.gif"
-            multiple>
+    <!-- Right Column: Settings tabs/sections -->
+    <div class="settings-column">
+        <!-- 📸 メディア素材 -->
+        <section class="card">
+            <h2>📸 メディア素材（画像 / GIF）</h2>
+            
+            <div class="setting-group">
+                <label class="section-label">スライド画像を追加 (複数選択可)</label>
+                <div class="file-drop-zone" id="imageDropZone">
+                    <input type="file" id="images" accept="image/*,.gif" multiple>
+                    <div class="drop-zone-text">📸 画像ファイルをここにドラッグ＆ドロップ<br>またはクリックしてファイルを選択</div>
+                </div>
+                <div id="imagePreview"></div>
+            </div>
+        </section>
 
-        <div id="imagePreview"></div>
-
-    </section>
-
-    <section class="card">
-
-        <h2>録音</h2>
-
-        <button id="recordBtn">
-            録音開始
-        </button>
-
-        <button
-            id="stopRecordBtn"
-            disabled>
-            録音停止
-        </button>
-
-        <audio
-            id="recordPreview"
-            controls>
-        </audio>
-
-    </section>
-
-    <!-- 音声 -->
-    <section class="card">
-
-        <h2>音声</h2>
-
-        <input
-            type="file"
-            id="audio"
-            accept="audio/*">
-
-        <audio
-            id="audioPreview"
-            controls>
-        </audio>
-
-        <div id="waveform"></div>
-
-    </section>
-
-    <!-- 歌詞 -->
-    <section class="card">
-
-        <h2>歌詞</h2>
-
-        <textarea
-            id="lyrics"
-            rows="10"
-            placeholder="1行ずつ入力"></textarea>
-
-    </section>
-
-    <!-- 動画設定 -->
-    <section class="card">
-
-        <h2>動画設定</h2>
-
-        <div class="grid">
-
-            <div>
-
-                <label>
-                    解像度
-                </label>
-
-                <select id="resolution">
-
-                    <option value="1280x720">
-                        HD
-                    </option>
-
-                    <option value="1920x1080" selected>
-                        Full HD
-                    </option>
-
-                    <option value="3840x2160">
-                        4K
-                    </option>
-
-                </select>
-
+        <!-- 🎵 オーディオミキサー -->
+        <section class="card">
+            <h2>🎵 2トラック・オーディオミキサー</h2>
+            
+            <!-- トラック 1: BGM -->
+            <div class="setting-group">
+                <label class="section-label">1. 背景音楽 (BGM) トラック</label>
+                <input type="file" id="audio" accept="audio/*">
+                <audio id="audioPreview" controls></audio>
+                <div id="waveform"></div>
+                <div class="volume-control">
+                    <span>BGM音量:</span>
+                    <input type="range" id="bgmVolume" min="0" max="150" value="100">
+                    <span id="bgmVolumeText">100%</span>
+                </div>
             </div>
 
-            <div>
+            <!-- トラック 2: ナレーション/マイク -->
+            <div class="setting-group" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="section-label" style="margin-bottom: 0;">2. ナレーション録音 (マイク音源)</label>
+                    <span id="recordTimer" style="font-size: 0.9rem; font-weight: 700; color: #ef4444; display: none;">録音時間: 0.0秒</span>
+                </div>
+                <div class="button-group">
+                    <button id="recordBtn" class="btn-record">🎙️ 録音開始</button>
+                    <button id="stopRecordBtn" disabled class="btn-stop">🛑 録音停止</button>
+                </div>
+                <audio id="recordPreview" controls></audio>
+                <div class="volume-control">
+                    <span>マイク音量:</span>
+                    <input type="range" id="voiceVolume" min="0" max="150" value="100">
+                    <span id="voiceVolumeText">100%</span>
+                </div>
+            </div>
+        </section>
 
-                <label>
-                    出力形式
-                </label>
-
-                <select id="format">
-
-                    <option value="mp4">
-                        MP4
-                    </option>
-
-                    <option value="webm">
-                        WebM
-                    </option>
-
-                    <option value="mov">
-                        MOV
-                    </option>
-
-                </select>
-
+        <!-- 💬 歌詞 & テロップ -->
+        <section class="card">
+            <h2>💬 歌詞 & テロップ設定</h2>
+            
+            <div class="setting-group">
+                <label class="section-label">音声認識によるテロップ自動作成</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button id="startSpeechBtn" class="btn-primary" style="margin: 0; flex: 1;">🎙️ 音声入力を開始（マイクから）</button>
+                    <button id="stopSpeechBtn" class="btn-stop" style="margin: 0; width: auto; display: none;">🛑 停止</button>
+                </div>
+                <div id="speechStatus" style="font-size: 0.85rem; color: #60a5fa; margin-bottom: 10px; display: none; font-weight: 500;">🎙️ 音声認識中... マイクに向かって話してください</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">※ 下記の「ナレーション録音」中も、話した声が自動的にテロップとして書き起こされます。</div>
+                
+                <label class="section-label">テロップテキスト (1行ごとに5秒間表示されます)</label>
+                <textarea id="lyrics" rows="5" placeholder="話した音声がここに自動で入力されます。手動での修正・入力も可能です。"></textarea>
             </div>
 
-            <div>
-
-                <label>
-                    FPS
+            <div class="grid" style="margin-top: 15px;">
+                <div>
+                    <label>文字色</label>
+                    <input type="color" id="lyricsColor" value="#ffffff">
+                </div>
+                <div>
+                    <label>サイズ (px)</label>
+                    <input type="range" id="lyricsSize" min="20" max="80" value="48" style="width: 100%;">
+                </div>
+                <div>
+                    <label>表示位置</label>
+                    <select id="lyricsPos">
+                        <option value="bottom" selected>下部 (Bottom)</option>
+                        <option value="center">中央 (Center)</option>
+                        <option value="top">上部 (Top)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>書体</label>
+                    <select id="lyricsFont">
+                        <option value="'M PLUS Rounded 1c', sans-serif" selected>丸ゴシック (M PLUS)</option>
+                        <option value="'Noto Serif JP', serif">美しい明朝 (Noto Serif)</option>
+                        <option value="'Dela Gothic One', sans-serif">極太インパクト (Dela)</option>
+                        <option value="'Kaisei Tokumin', serif">レトロ明朝 (Kaisei)</option>
+                        <option value="'Yuji Syuku', serif">筆文字風 (Yuji)</option>
+                        <option value="sans-serif">標準ゴシック (Sans)</option>
+                        <option value="serif">標準明朝 (Serif)</option>
+                        <option value="monospace">等幅 (Monospace)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="checkbox-group" style="margin-top: 15px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: var(--text-muted);">
+                    <input type="checkbox" id="lyricsBg" checked>
+                    視認性向上のために文字の背景に半透明の帯を表示する
                 </label>
+            </div>
+        </section>
 
-                <input
-                    type="number"
-                    id="fps"
-                    min="1"
-                    max="120"
-                    value="30">
+        <!-- ⚙️ 動画出力設定 -->
+        <section class="card">
+            <h2>⚙️ 動画出力・演出設定</h2>
+            
+            <div class="grid">
+                <div>
+                    <label>解像度</label>
+                    <select id="resolution">
+                        <option value="1280x720">HD (720p)</option>
+                        <option value="1920x1080" selected>Full HD (1080p)</option>
+                        <option value="3840x2160">4K (2160p)</option>
+                    </select>
+                </div>
 
+                <div>
+                    <label>出力形式</label>
+                    <select id="format">
+                        <option value="mp4" selected>MP4</option>
+                        <option value="webm">WebM</option>
+                        <option value="mov">MOV</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>フレームレート (FPS)</label>
+                    <input type="number" id="fps" min="1" max="60" value="30">
+                </div>
+
+                <div>
+                    <label>画像表示時間 (秒)</label>
+                    <input type="number" id="duration" min="1" max="60" value="3">
+                </div>
+
+                <div>
+                    <label>トランジション</label>
+                    <select id="transitionType">
+                        <option value="fade" selected>クロスフェード</option>
+                        <option value="slide">スライド (左方向)</option>
+                        <option value="none">カット（瞬時切り替え）</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>切替効果秒数</label>
+                    <input type="number" id="fade" min="0" max="10" step="0.1" value="1">
+                </div>
             </div>
 
-            <div>
-
-                <label>
-                    画像表示秒数
+            <div class="checkbox-group" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 15px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: var(--text-muted);">
+                    <input type="checkbox" id="zoomEnabled" checked>
+                    ケン・バーンズ効果（スムーズな自動ズーム演出）を適用する
                 </label>
-
-                <input
-                    type="number"
-                    id="duration"
-                    min="1"
-                    max="60"
-                    value="3">
-
             </div>
-
-            <div>
-
-                <label>
-                    フェード秒数
-                </label>
-
-                <input
-                    type="number"
-                    id="fade"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    value="1">
-
-            </div>
-
-        </div>
-
-    </section>
-
-    <!-- 音量 -->
-    <section class="card">
-
-        <h2>音量</h2>
-
-        <input
-            type="range"
-            id="volume"
-            min="0"
-            max="200"
-            value="100">
-
-        <span id="volumeText">
-            100%
-        </span>
-
-    </section>
-
-    <!-- プレビュー -->
-    <section class="card">
-
-        <h2>動画プレビュー</h2>
-
-        <div class="previewArea">
-
-            <canvas id="previewCanvas"></canvas>
-
-            <div id="lyricsPreview"></div>
-
-        </div>
-
-    </section>
-
-    <!-- 動画生成 -->
-    <section class="card">
-
-        <h2>動画生成</h2>
-
-        <button id="generateBtn">
-            動画生成開始
-        </button>
-
-        <div id="status">
-            待機中
-        </div>
-
-        <div id="progressContainer">
-            <div id="progressBar"></div>
-        </div>
-
-    </section>
-
-    <!-- 出力 -->
-    <section class="card">
-
-        <h2>出力動画</h2>
-
-        <video
-            id="outputVideo"
-            controls>
-        </video>
-
-        <br>
-
-        <a
-            id="downloadBtn"
-            download
-            style="display:none;">
-            ダウンロード
-        </a>
-
-    </section>
-
+        </section>
+    </div>
 </main>
 
 <script src="app.js"></script>
